@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <functional>
 
 class Engine
 {
@@ -12,12 +13,14 @@ public:
 
     void init(sf::Vector2u windowSize, const std::string& title, bool fullscreen = false);
     void setParameters(unsigned int fps, bool enableKeyboard, bool enableMouse);
+
     void run();
 
     void clearScreen(sf::Color color);
-
     void log(const std::string& message);
     void close();
+
+    void setRenderCallback(std::function<void(sf::RenderWindow&)> callback);
 
 private:
     void handleEvents();
@@ -36,9 +39,7 @@ private:
     unsigned int m_frameRateLimit{ 60 };
     bool m_isKeyboardEnabled{ true };
     bool m_isMouseEnabled{ true };
-    sf::Color m_bgColor{ sf::Color::Blue };
+    sf::Color m_clearColor{ sf::Color::Black };
 
-    sf::CircleShape m_ball;
-    sf::Vector2f m_ballVelocity{ 1.0f, 0.5f };
-    float m_animationSpeed{ 200.0f };
+    std::function<void(sf::RenderWindow&)> m_renderCallback;
 };
