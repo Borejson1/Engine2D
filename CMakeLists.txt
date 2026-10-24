@@ -10,7 +10,7 @@ link_directories("${CMAKE_CURRENT_SOURCE_DIR}/Include/SFML/lib")
 add_executable(EngineMaster2D 
     "Source/EngineMaster2D.cpp"
     "Source/EngineMaster2D.h"
-)
+ "Source/engine.cpp")
 
 target_link_libraries(EngineMaster2D PRIVATE 
     $<$<CONFIG:Debug>:sfml-graphics-d sfml-window-d sfml-system-d>
