@@ -40,6 +40,11 @@ int main()
         renderer.drawRectangle(150.0f, 450.0f, 100.0f, 60.0f, sf::Color::White, true);
 
         renderer.drawPolyline(polylinePoints, true, sf::Color::Yellow);
+        renderer.drawCircleTrig(200, 200, 45, sf::Color::Blue);
+        renderer.drawEllipseTrig(550, 180, 80, 40, sf::Color(255, 165, 0));
+        renderer.floodFill(180, 480, sf::Color::Green, sf::Color(30, 30, 30));
+        renderer.drawRectangle(100.0f, 400.0f, 120.0f, 80.0f, sf::Color::White, false);
+        renderer.borderFill(150, 440, sf::Color::Cyan, sf::Color::White);
         });
 
     engine.run();

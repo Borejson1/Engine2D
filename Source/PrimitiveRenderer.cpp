@@ -1,6 +1,7 @@
 #include "PrimitiveRenderer.h"
 #include <cmath>
 #include <algorithm>
+#include <queue>
 
 PrimitiveRenderer::PrimitiveRenderer(sf::RenderTarget& target)
     : m_target(target)
@@ -121,5 +122,150 @@ void PrimitiveRenderer::drawPolyline(const std::vector<LineSegment>& segments, s
     for (size_t i = 0; i < segments.size(); ++i)
     {
         segments[i].draw(*this, false, color);
+    }
+}
+
+void PrimitiveRenderer::drawCircleTrig(int x0, int y0, float radius, sf::Color color)
+{
+    float step = 1.0f / radius;
+    float maxAngle = 1.5707963267948966f;
+
+    for (float alpha = 0.0f; alpha <= maxAngle; alpha += step)
+    {
+        float x = radius * std::cos(alpha);
+        float y = radius * std::sin(alpha);
+
+        int ix = static_cast<int>(std::round(x));
+        int iy = static_cast<int>(std::round(y));
+
+        drawPoint(static_cast<float>(x0 + ix), static_cast<float>(y0 + iy), color);
+        drawPoint(static_cast<float>(x0 - ix), static_cast<float>(y0 + iy), color);
+        drawPoint(static_cast<float>(x0 + ix), static_cast<float>(y0 - iy), color);
+        drawPoint(static_cast<float>(x0 - ix), static_cast<float>(y0 - iy), color);
+    }
+}
+
+void PrimitiveRenderer::drawEllipseTrig(int x0, int y0, float rx, float ry, sf::Color color)
+{
+    float maxR = std::max(rx, ry);
+    if (maxR <= 0.0f) return;
+
+    float step = 1.0f / maxR;
+    float maxAngle = 1.5707963267948966f;
+
+    for (float alpha = 0.0f; alpha <= maxAngle; alpha += step)
+    {
+        float x = rx * std::cos(alpha);
+        float y = ry * std::sin(alpha);
+
+        int ix = static_cast<int>(std::round(x));
+        int iy = static_cast<int>(std::round(y));
+
+        drawPoint(static_cast<float>(x0 + ix), static_cast<float>(y0 + iy), color);
+        drawPoint(static_cast<float>(x0 - ix), static_cast<float>(y0 + iy), color);
+        drawPoint(static_cast<float>(x0 + ix), static_cast<float>(y0 - iy), color);
+        drawPoint(static_cast<float>(x0 - ix), static_cast<float>(y0 - iy), color);
+    }
+}
+
+void PrimitiveRenderer::borderFill(int startX, int startY, sf::Color fillColor, sf::Color borderColor)
+{
+    sf::Vector2u windowSize = m_target.getSize();
+    if (startX < 0 || startX >= static_cast<int>(windowSize.x) ||
+        startY < 0 || startY >= static_cast<int>(windowSize.y)) {
+        return;
+    }
+
+    sf::RenderWindow* window = dynamic_cast<sf::RenderWindow*>(&m_target);
+    if (!window) return;
+
+    sf::Texture texture;
+    if (!texture.resize({ windowSize.x, windowSize.y })) return;
+    texture.update(*window);
+    sf::Image image = texture.copyToImage();
+
+    sf::Color currentColor = image.getPixel({ static_cast<unsigned int>(startX), static_cast<unsigned int>(startY) });
+
+    if (currentColor == fillColor || currentColor == borderColor) {
+        return;
+    }
+
+    std::queue<sf::Vector2i> pixelQueue;
+    pixelQueue.push({ startX, startY });
+
+    while (!pixelQueue.empty()) {
+        sf::Vector2i p = pixelQueue.front();
+        pixelQueue.pop();
+
+        int x = p.x;
+        int y = p.y;
+
+        if (x < 0 || x >= static_cast<int>(windowSize.x) ||
+            y < 0 || y >= static_cast<int>(windowSize.y)) {
+            continue;
+        }
+
+        sf::Color pixelColor = image.getPixel({ static_cast<unsigned int>(x), static_cast<unsigned int>(y) });
+
+        if (pixelColor != fillColor && pixelColor != borderColor) {
+            drawPoint(static_cast<float>(x), static_cast<float>(y), fillColor);
+            image.setPixel({ static_cast<unsigned int>(x), static_cast<unsigned int>(y) }, fillColor);
+
+            pixelQueue.push({ x + 1, y });
+            pixelQueue.push({ x - 1, y });
+            pixelQueue.push({ x, y + 1 });
+            pixelQueue.push({ x, y - 1 });
+        }
+    }
+}
+
+void PrimitiveRenderer::floodFill(int startX, int startY, sf::Color fillColor, sf::Color targetColor)
+{
+    sf::RenderWindow* window = dynamic_cast<sf::RenderWindow*>(&m_target);
+    if (!window) return;
+
+    sf::Vector2u windowSize = window->getSize();
+    if (startX < 0 || startX >= static_cast<int>(windowSize.x) ||
+        startY < 0 || startY >= static_cast<int>(windowSize.y)) {
+        return;
+    }
+
+    sf::Texture texture;
+    if (!texture.resize({ windowSize.x, windowSize.y })) return;
+    texture.update(*window);
+    sf::Image image = texture.copyToImage();
+
+    sf::Color currentColor = image.getPixel({ static_cast<unsigned int>(startX), static_cast<unsigned int>(startY) });
+
+    if (currentColor == fillColor || currentColor != targetColor) {
+        return;
+    }
+
+    std::queue<sf::Vector2i> pixelQueue;
+    pixelQueue.push({ startX, startY });
+
+    while (!pixelQueue.empty()) {
+        sf::Vector2i p = pixelQueue.front();
+        pixelQueue.pop();
+
+        int x = p.x;
+        int y = p.y;
+
+        if (x < 0 || x >= static_cast<int>(windowSize.x) ||
+            y < 0 || y >= static_cast<int>(windowSize.y)) {
+            continue;
+        }
+
+        sf::Color pixelColor = image.getPixel({ static_cast<unsigned int>(x), static_cast<unsigned int>(y) });
+
+        if (pixelColor == targetColor) {
+            drawPoint(static_cast<float>(x), static_cast<float>(y), fillColor);
+            image.setPixel({ static_cast<unsigned int>(x), static_cast<unsigned int>(y) }, fillColor);
+
+            pixelQueue.push({ x + 1, y });
+            pixelQueue.push({ x - 1, y });
+            pixelQueue.push({ x, y + 1 });
+            pixelQueue.push({ x, y - 1 });
+        }
     }
 }

@@ -21,3 +21,30 @@ void LineSegment::draw(PrimitiveRenderer& renderer, bool useIncremental, sf::Col
         renderer.drawLine(m_start.getX(), m_start.getY(), m_end.getX(), m_end.getY(), color);
     }
 }
+
+void LineSegment::draw(sf::RenderTarget& target)
+{
+    sf::Vertex line[] = {
+        { sf::Vector2f{ m_start.getX(), m_start.getY() }, sf::Color::White },
+        { sf::Vector2f{ m_end.getX(), m_end.getY() }, sf::Color::White }
+    };
+    target.draw(line, 2, sf::PrimitiveType::Lines);
+}
+
+void LineSegment::translate(float tx, float ty)
+{
+    m_start.translate(tx, ty);
+    m_end.translate(tx, ty);
+}
+
+void LineSegment::rotate(float angle)
+{
+    m_start.rotate(angle);
+    m_end.rotate(angle);
+}
+
+void LineSegment::scale(float kx, float ky)
+{
+    m_start.scale(kx, ky);
+    m_end.scale(kx, ky);
+}

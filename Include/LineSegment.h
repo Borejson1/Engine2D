@@ -1,9 +1,11 @@
 #pragma once
+#include <SFML/Graphics.hpp>
+#include "GameObject.h"
 #include "Point2D.h"
 
 class PrimitiveRenderer;
 
-class LineSegment
+class LineSegment : public ShapeObject
 {
 public:
     LineSegment();
@@ -14,6 +16,12 @@ public:
     Point2D getEnd() const;
     void setStart(const Point2D& start);
     void setEnd(const Point2D& end);
+
+    void draw(sf::RenderTarget& target) override;
+
+    void translate(float tx, float ty) override;
+    void rotate(float angle) override;
+    void scale(float kx, float ky) override;
 
     void draw(PrimitiveRenderer& renderer, bool useIncremental = false, sf::Color color = sf::Color::White) const;
 

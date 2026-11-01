@@ -17,7 +17,7 @@ file(GLOB SOURCES
     "Include/*.h"
 )
 
-add_executable(EngineMaster2D ${SOURCES})
+add_executable(EngineMaster2D ${SOURCES} "Source/Player.cpp")
 
 target_link_libraries(EngineMaster2D PRIVATE 
     $<$<CONFIG:Debug>:sfml-graphics-d sfml-window-d sfml-system-d>
