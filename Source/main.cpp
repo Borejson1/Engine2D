@@ -2,6 +2,7 @@
 #include "PrimitiveRenderer.h"
 #include "Point2D.h"
 #include "LineSegment.h"
+#include "Player.h"
 
 int main()
 {
@@ -25,7 +26,10 @@ int main()
         Point2D(450.0f, 450.0f)
     };
 
+    Player player(400.0f, 300.0f);
+
     engine.setRenderCallback([&](sf::RenderWindow& window) {
+        player.update(0.016f);
         PrimitiveRenderer renderer(window);
 
         p1.draw(renderer, sf::Color::Yellow);
@@ -45,6 +49,7 @@ int main()
         renderer.floodFill(180, 480, sf::Color::Green, sf::Color(30, 30, 30));
         renderer.drawRectangle(100.0f, 400.0f, 120.0f, 80.0f, sf::Color::White, false);
         renderer.borderFill(150, 440, sf::Color::Cyan, sf::Color::White);
+        player.draw(renderer, sf::Color::Green);    
         });
 
     engine.run();
