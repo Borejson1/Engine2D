@@ -1,40 +1,53 @@
 #include "Player.h"
+#include "Engine.h"
 #include "PrimitiveRenderer.h"
 #include <SFML/Window/Keyboard.hpp>
 #include <cmath>
 
-Player::Player(float startX, float startY)
-    : m_position(startX, startY), m_speed(200.0f)
+Player::Player(float startX, float startY, Engine* engine)
+    : m_position(startX, startY), m_speed(200.0f), m_engine(engine)
 {
 }
 
 void Player::update(float deltaTime)
 {
+    m_clearTrailTimer += deltaTime;
+
     float movement = m_speed * deltaTime;
-    bool moved = false;
+    m_isMoving = false;
+
+    float dx = 0.0f;
+    float dy = 0.0f;
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-    {
-        translate(0.0f, -movement);
-        moved = true;
-    }
+        dy -= 1.0f;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
-    {
-        translate(0.0f, movement);
-        moved = true;
-    }
+        dy += 1.0f;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
-    {
-        translate(-movement, 0.0f);
-        moved = true;
-    }
+        dx -= 1.0f;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
+        dx += 1.0f;
+
+    if (dx != 0.0f || dy != 0.0f)
     {
-        translate(movement, 0.0f);
-        moved = true;
+        m_isMoving = true;
+
+        float length = std::sqrt(dx * dx + dy * dy);
+        float normDx = dx / length;
+        float normDy = dy / length;
+
+        translate(normDx * movement, normDy * movement);
+        if (dy < 0 && dx == 0) m_animOffset = 0;
+        else if (dy < 0 && dx > 0) m_animOffset = 8;
+        else if (dy == 0 && dx > 0) m_animOffset = 16;
+        else if (dy > 0 && dx > 0) m_animOffset = 24;
+        else if (dy > 0 && dx == 0) m_animOffset = 32;
+        else if (dy > 0 && dx < 0) m_animOffset = 40;
+        else if (dy == 0 && dx < 0) m_animOffset = 48;
+        else if (dy < 0 && dx < 0) m_animOffset = 56;
     }
 
-    if (moved)
+    if (m_isMoving)
     {
         if (m_trail.empty() ||
             std::abs(m_trail.back().getX() - m_position.getX()) > 4.0f ||
@@ -42,17 +55,46 @@ void Player::update(float deltaTime)
         {
             m_trail.push_back(m_position);
         }
+
+        animationTimer += deltaTime;
+        if (animationTimer >= (1.0f / framesPerSecond)) {
+            animate();
+            animationTimer = 0.0f;
+        }
+    }
+    else
+    {
+        currentSpriteIndex = m_animOffset;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F7))
     {
-        clearTrail();
+        if (!m_trail.empty() && m_clearTrailTimer >= 5.0f)
+        {
+            clearTrail();
+            m_clearTrailTimer = 0.0f;
+            if (m_engine)
+            {
+                m_engine->log("Wyczyszczono slad gracza (F7).");
+            }
+        }
+    }
+}
+
+void Player::animate()
+{
+    if (!sprites.empty()) {
+        if (currentSpriteIndex < m_animOffset || currentSpriteIndex >= m_animOffset + 8) {
+            currentSpriteIndex = m_animOffset;
+        }
+        else {
+            currentSpriteIndex = m_animOffset + ((currentSpriteIndex - m_animOffset + 1) % 8);
+        }
     }
 }
 
 void Player::draw(sf::RenderTarget& target)
 {
-
     if (m_trail.size() > 1)
     {
         for (size_t i = 0; i < m_trail.size() - 1; ++i)
@@ -65,10 +107,19 @@ void Player::draw(sf::RenderTarget& target)
         }
     }
 
-    sf::CircleShape shape(10.0f);
-    shape.setPosition({ m_position.getX() - 10.0f, m_position.getY() - 10.0f });
-    shape.setFillColor(sf::Color::Green);
-    target.draw(shape);
+    if (!sprites.empty()) {
+        sprites[currentSpriteIndex].setPosition({
+            m_position.getX() - sprites[currentSpriteIndex].getGlobalBounds().size.x / 2.0f,
+            m_position.getY() - sprites[currentSpriteIndex].getGlobalBounds().size.y / 2.0f
+            });
+        target.draw(sprites[currentSpriteIndex]);
+    }
+    else {
+        sf::CircleShape shape(10.0f);
+        shape.setPosition({ m_position.getX() - 10.0f, m_position.getY() - 10.0f });
+        shape.setFillColor(sf::Color::Green);
+        target.draw(shape);
+    }
 }
 
 void Player::draw(PrimitiveRenderer& renderer, sf::Color color)

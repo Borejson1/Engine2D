@@ -151,7 +151,7 @@ void Engine::handleEvents()
 
 void Engine::update(float dt)
 {
-    
+
 }
 
 void Engine::render()
